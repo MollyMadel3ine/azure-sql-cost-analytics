@@ -57,7 +57,7 @@ CREATE TABLE
    cost_entries (
       resource_key INT NOT NULL REFERENCES resources (resource_key),
       cost_date DATE NOT NULL,
-      daily_cost DECIMAL(12, 4) NOT NULL,
+      daily_cost DECIMAL(14, 8) NOT NULL,
       currency CHAR(3) NOT NULL DEFAULT 'USD',
       PRIMARY KEY (resource_key, cost_date)
    );
