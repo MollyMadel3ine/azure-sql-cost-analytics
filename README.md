@@ -59,7 +59,7 @@ erDiagram
   - [x] Repo scaffolding
   - [x] Terraform: serverless Azure SQL with auto-pause
   - [x] Schema DDL (`objects/01_schema.sql`)
-  - [ ] ER diagram + normalization decision notes
+  - [x] ER diagram + normalization decision notes
   - [ ] Data export (`az resource list` + Cost Management CSV)
   - [ ] Python load script (idempotent, env-var connection string)
 - [ ] **Phase 2 — Core query library** (joins, aggregation, subqueries)
