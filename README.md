@@ -60,8 +60,8 @@ erDiagram
   - [x] Terraform: serverless Azure SQL with auto-pause
   - [x] Schema DDL (`objects/01_schema.sql`)
   - [x] ER diagram + normalization decision notes
-  - [ ] Data export (`az resource list` + Cost Management CSV)
-  - [ ] Python load script (idempotent, env-var connection string)
+  - [x] Data export (`az resource list` + Cost Management CSV)
+  - [x] Python load script (idempotent, env-var connection string)
 - [ ] **Phase 2 — Core query library** (joins, aggregation, subqueries)
 - [ ] **Phase 3 — Window functions & CTEs**
 - [ ] **Phase 4 — Views, indexing & performance** (execution-plan before/after)
