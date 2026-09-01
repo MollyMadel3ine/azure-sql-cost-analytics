@@ -93,7 +93,7 @@ then seven days (Aug 20–26) that produce no rows at all:
 | 2026-08-27 | 0.25973180 |                14 |
 | 2026-08-28 | 0.85823933 |                 6 |
 
-![Daily spend trend showing the Aug 20–26 gap](docs/daily_trend.png)
+![Daily spend trend showing the Aug 20–26 gap](docs/daily-trend.png)
 
 This isn't missing data — the environments were destroyed between work
 sessions (`terraform destroy`). The rebuild is visible on Aug 27: 14
@@ -137,7 +137,7 @@ untested one.
   - [x] ER diagram + normalization decision notes
   - [x] Data export (`az resource list` + Cost Management CSV)
   - [x] Python load script (idempotent, env-var connection string)
-- [ ] **Phase 2 — Core query library** (joins, aggregation, subqueries)
+- [x] **Phase 2 — Core query library** (joins, aggregation, subqueries)
 - [ ] **Phase 3 — Window functions & CTEs**
 - [ ] **Phase 4 — Views, indexing & performance** (execution-plan before/after)
 - [ ] **Phase 5 (optional) — Portfolio integration**
