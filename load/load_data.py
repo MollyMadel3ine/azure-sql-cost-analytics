@@ -59,6 +59,7 @@ def get_connection() -> pyodbc.Connection:
             'Server=tcp:<server-fqdn>,1433;Database=sqldb-cost-analytics;'
             'Uid=<user>;Pwd=<password>;Encrypt=yes;Connection Timeout=90"'
         )
+    """Retry the connection while the serverless database resumes from auto-pause"""
     attempts = 5
     for attempt in range(1, attempts + 1):
         try:
