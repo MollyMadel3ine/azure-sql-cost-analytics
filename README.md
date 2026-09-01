@@ -74,6 +74,7 @@ The rule of thumb: if running a file **changes what exists** in the database (`C
 - **Client-IP firewall rule, not a private endpoint** — This database holds low-sensitivity data (my own subscription's inventory and costs) and is accessed interactively from my laptop many times per session. The landing zone repo demonstrates the private-endpoint pattern where it's warranted — an application-accessed database treated as production. Here, that isolation would add ~$10/month and force every query session through Bastion, for no meaningful risk reduction. One allowed client IP + SQL auth + TLS is the proportionate control. Different data, different access pattern, different answer.
 - **Normalized to 3NF** — Tags live in their own table (resource_tags) rather than as columns or a JSON blob on resources, because a resource has many tags — first normal form's no-repeating-groups rule. Facts about a resource (name, type, location) live only on resources, keyed by the resource itself, so nothing depends on part of a key (2NF) or on another non-key column (3NF). Practical payoff: a tag rename is one row update, not a schema change, and cost rows never duplicate resource attributes — cost_entries stays narrow, which matters at daily-grain volume.
 - **Surrogate key on 'resources'** - the original design used the ARM resource ID(NVARCHAR(400)) as the natural OK, with child tables keying on it. SQL Server warned that the resulting compsosite clustered index could reach 1,000 bytes - over the 900 byte limit - meaning inserts would fail for long enough resource IDs. Fix: resource_key INT IDENTITY as the PK that child tables reference, with the ARM ID retained under a UNIQUE constraint(non-clustered, 1,700 byte limit - 800 bytes fits). Side benefit: Phase 2's JOINs now compared 4-byte integers instead of 800-byte strings.
+- **Every aggregate gets a control-total check.** The first run of query 04 returned $244.78 against a true total of $14.40 — exactly 17×. The multiplier was the fingerprint: a two-character alias typo in the LEFT JOIN's ON clause (ce.resource_key where rt.resource_key belonged) left the tag rows unanchored, cross-joining all 17 project-tag rows to every cost row. Legal SQL, plausible output shape, caught only because the bucket totals were checked against the known table sum.
 
 ## Findings
 
@@ -127,6 +128,8 @@ existing rows rather than creating new ones. The query was verified by
 temporarily shifting the "current" cutoff forward one day, which correctly
 returned all 15 resources — the empty result is a tested pass, not an
 untested one.
+
+`04_cost_by_tag.sql` The chargeback query found a governance gap — including in this project itself. 04_cost_by_tag.sql splits spend by project tag with an explicit (untagged) bucket (LEFT JOIN with the tag filter in the ON clause — a WHERE would silently drop untagged rows). Result: only the container project tags consistently. The untagged bucket contains exactly two resources: the Terraform state storage account (created by hand in July, before any automation existed to tag it) and this project's own SQL database — the cost-analytics stack cannot attribute its own spend. Action item: add a project tag to the cost-analytics Terraform and re-apply; the next data load should move the database out of the untagged bucket, which this query will verify.
 
 ## Roadmap
 
