@@ -6,8 +6,8 @@ This is the **data-layer chapter** of a three-repo portfolio:
 
 | Repo                                                | Skill story                                                           |
 | --------------------------------------------------- | --------------------------------------------------------------------- |
-| [azure-webapp-iac](../../../azure-webapp-iac)       | Landing zone, networking, governance — Terraform + Azure DevOps CI/CD |
-| [azure-container-iac](../../../azure-container-iac) | Containers, multi-environment promotion, managed identity             |
+| [azure-webapp-iac](https://github.com/MollyMadel3ine/webapp-iac)       | Landing zone, networking, governance — Terraform + Azure DevOps CI/CD |
+| [azure-container-iac](https://github.com/MollyMadel3ine/container-iac) | Containers, multi-environment promotion, managed identity             |
 | **this repo**                                       | Schema design, intermediate SQL, query performance                    |
 
 The infrastructure here is deliberately minimal (see [Design decisions](#design-decisions)) — the CI/CD and networking patterns are demonstrated in the other two repos. This one is about the SQL.
@@ -75,6 +75,10 @@ The rule of thumb: if running a file **changes what exists** in the database (`C
 - **Normalized to 3NF** — Tags live in their own table (resource_tags) rather than as columns or a JSON blob on resources, because a resource has many tags — first normal form's no-repeating-groups rule. Facts about a resource (name, type, location) live only on resources, keyed by the resource itself, so nothing depends on part of a key (2NF) or on another non-key column (3NF). Practical payoff: a tag rename is one row update, not a schema change, and cost rows never duplicate resource attributes — cost_entries stays narrow, which matters at daily-grain volume.
 - **Surrogate key on 'resources'** - the original design used the ARM resource ID(NVARCHAR(400)) as the natural OK, with child tables keying on it. SQL Server warned that the resulting compsosite clustered index could reach 1,000 bytes - over the 900 byte limit - meaning inserts would fail for long enough resource IDs. Fix: resource_key INT IDENTITY as the PK that child tables reference, with the ARM ID retained under a UNIQUE constraint(non-clustered, 1,700 byte limit - 800 bytes fits). Side benefit: Phase 2's JOINs now compared 4-byte integers instead of 800-byte strings.
 - **Every aggregate gets a control-total check.** The first run of query 04 returned $244.78 against a true total of $14.40 — exactly 17×. The multiplier was the fingerprint: a two-character alias typo in the LEFT JOIN's ON clause (ce.resource_key where rt.resource_key belonged) left the tag rows unanchored, cross-joining all 17 project-tag rows to every cost row. Legal SQL, plausible output shape, caught only because the bucket totals were checked against the known table sum.
+- **CTEs vs. subqueries (query 03 refactor)** Query 03 originally answered "which resources dropped out of inventory, and what did they cost?" with a scalar subquery embedded in the WHERE clause. It was refactored into layered CTEs (latest_inventory → stale_resources → final aggregation) — the commit diff shows the full before/after.
+The trade-off:
+Readability. The subquery version reads inside-out — you dig to the innermost parentheses first, then work back outward. The CTE version reads top-to-bottom as named steps, in the same order you'd explain the logic to a teammate. For a query this small the gain is modest; it compounds quickly at two or three levels of nesting, where subqueries become unreadable while CTE chains grow linearly.
+Performance is a wash. SQL Server inlines simple CTEs into the same execution plan as the equivalent subquery. This was a readability decision, not an optimization — both versions were run against the full dataset and returned identical results.
 
 ## Findings
 
@@ -141,7 +145,10 @@ untested one.
   - [x] Data export (`az resource list` + Cost Management CSV)
   - [x] Python load script (idempotent, env-var connection string)
 - [x] **Phase 2 — Core query library** (joins, aggregation, subqueries)
-- [ ] **Phase 3 — Window functions & CTEs**
+- [x] **Phase 3 — Window functions & CTEs**
+
+## Possible extensions
+
 - [ ] **Phase 4 — Views, indexing & performance** (execution-plan before/after)
 - [ ] **Phase 5 (optional) — Portfolio integration**
 
